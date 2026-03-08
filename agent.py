@@ -232,9 +232,11 @@ class GeminiLiveLoop:
         # Stop event — kills audio tasks; does NOT touch the server thread
         self._stop = asyncio.Event()
 
-        # Transcript fragment buffers — flushed on turn_complete
-        self._jordan_buf:   list[str] = []
-        self._customer_buf: list[str] = []
+        # Transcript buffers per active turn (deduped and flushed on turn_complete).
+        self._jordan_turn_text = ""
+        self._customer_turn_text = ""
+        self._last_jordan_final = ""
+        self._last_customer_final = ""
 
     # ── Internal state writer (same process — no HTTP needed) ─────────────────
 
@@ -252,15 +254,51 @@ class GeminiLiveLoop:
                 dashboard_state["conversation"] = dashboard_state["conversation"][-300:]
         print(f"  [{kind.upper():8}] {text[:120]}")
 
+    def _append_turn_fragment(self, current: str, fragment: str) -> str:
+        """
+        Merge streaming transcript fragments without duplicating cumulative text.
+        Gemini often emits progressive fragments (e.g. "hello" -> "hello there").
+        """
+        frag = fragment.strip()
+        if not frag:
+            return current
+        if not current:
+            return frag
+        if frag == current:
+            return current
+        if frag.startswith(current):
+            return frag
+        if current.startswith(frag):
+            return current
+        if frag in current:
+            return current
+        return f"{current} {frag}".strip()
+
+    @staticmethod
+    def _norm_text(text: str) -> str:
+        return " ".join(text.strip().split()).lower()
+
     def _flush_jordan(self) -> None:
-        if self._jordan_buf:
-            self._write_entry("jordan", " ".join(self._jordan_buf))
-            self._jordan_buf = []
+        text = self._jordan_turn_text.strip()
+        if text and self._norm_text(text) != self._norm_text(self._last_jordan_final):
+            self._write_entry("jordan", text)
+            self._last_jordan_final = text
+        self._jordan_turn_text = ""
 
     def _flush_customer(self) -> None:
-        if self._customer_buf:
-            self._write_entry("customer", " ".join(self._customer_buf))
-            self._customer_buf = []
+        text = self._customer_turn_text.strip()
+        if text and self._norm_text(text) != self._norm_text(self._last_customer_final):
+            self._write_entry("customer", text)
+            self._last_customer_final = text
+        self._customer_turn_text = ""
+
+    def _clear_pending_audio_output(self) -> None:
+        """
+        Gemini interruption handling: when user barges in, discard queued model audio
+        that has not yet played so playback stops immediately.
+        """
+        while not self.audio_in_queue.empty():
+            self.audio_in_queue.get_nowait()
 
     # ── Wait for call ─────────────────────────────────────────────────────────
 
@@ -343,13 +381,22 @@ class GeminiLiveLoop:
                             if ot:
                                 frag = getattr(ot, "text", "").strip()
                                 if frag:
-                                    self._jordan_buf.append(frag)
+                                    self._jordan_turn_text = self._append_turn_fragment(
+                                        self._jordan_turn_text, frag
+                                    )
 
                             it = getattr(sc, "input_transcription", None)
                             if it:
                                 frag = getattr(it, "text", "").strip()
                                 if frag:
-                                    self._customer_buf.append(frag)
+                                    self._customer_turn_text = self._append_turn_fragment(
+                                        self._customer_turn_text, frag
+                                    )
+
+                            # Gemini-native interruption signal (barge-in handling).
+                            if getattr(sc, "interrupted", False):
+                                self._clear_pending_audio_output()
+                                self._jordan_turn_text = ""
 
                             # Flush complete utterances on turn_complete
                             if getattr(sc, "turn_complete", False):
@@ -361,7 +408,9 @@ class GeminiLiveLoop:
                     # Fallback: plain text
                     rt = getattr(response, "text", None)
                     if rt and rt.strip():
-                        self._jordan_buf.append(rt.strip())
+                        self._jordan_turn_text = self._append_turn_fragment(
+                            self._jordan_turn_text, rt.strip()
+                        )
 
             except Exception as exc:
                 if self._stop.is_set():
@@ -420,8 +469,10 @@ class GeminiLiveLoop:
 
     async def run(self) -> None:
         self._stop.clear()
-        self._jordan_buf   = []
-        self._customer_buf = []
+        self._jordan_turn_text = ""
+        self._customer_turn_text = ""
+        self._last_jordan_final = ""
+        self._last_customer_final = ""
 
         self._wait_for_call()
 
@@ -438,7 +489,13 @@ class GeminiLiveLoop:
 
         live_cfg = types.LiveConnectConfig(
             response_modalities=["AUDIO"],
-            system_instruction=self.system_prompt,
+            system_instruction=(
+                self.system_prompt
+                + "\n\nREPETITION RULES:\n"
+                + "- Do not repeat prior points unless the caller explicitly asks to repeat.\n"
+                + "- If asked to repeat, give a concise single restatement.\n"
+                + "- Avoid verbatim restatement across consecutive turns."
+            ),
             speech_config=types.SpeechConfig(
                 voice_config=types.VoiceConfig(
                     prebuilt_voice_config=types.PrebuiltVoiceConfig(
