@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apex | Talk to Jordan</title>
+    <style>
+      :root {
+        --bg-base: #0a0f1e;
+        --bg-surface: #111827;
+        --bg-elevated: #1a2235;
+        --bg-header: #0d1424;
+        --accent-blue: #2563eb;
+        --accent-green: #10b981;
+        --accent-amber: #f59e0b;
+        --accent-red: #ef4444;
+        --accent-purple: #a855f7;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-subtle: #1f2937;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+        color: var(--text-primary);
+        background: var(--bg-base);
+      }
+
+      .hidden { display: none !important; }
+      .view { min-height: 100vh; }
+
+      .landing {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 96px 24px;
+      }
+      .hero {
+        font-size: 52px;
+        line-height: 1.04;
+        max-width: 820px;
+        margin: 0 0 18px;
+      }
+      .sub {
+        font-size: 20px;
+        color: var(--text-secondary);
+        max-width: 780px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin: 36px 0;
+      }
+      .card {
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-surface);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .cta {
+        border: 0;
+        border-radius: 12px;
+        color: #fff;
+        background: var(--accent-blue);
+        font-size: 20px;
+        font-weight: 700;
+        padding: 16px 22px;
+        cursor: pointer;
+      }
+
+      .connecting {
+        display: grid;
+        place-items: center;
+        background: rgba(10, 15, 30, 0.95);
+      }
+      .connect-card {
+        text-align: center;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-surface);
+        border-radius: 14px;
+        padding: 30px;
+        min-width: 340px;
+      }
+      .avatar {
+        width: 92px;
+        height: 92px;
+        margin: 0 auto 16px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: #0f172a;
+        border: 2px solid var(--accent-blue);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+        animation: pulse 1.2s infinite;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+        100% { box-shadow: 0 0 0 24px rgba(37, 99, 235, 0); }
+      }
+
+      .app-header {
+        height: 64px;
+        border-bottom: 1px solid var(--border-subtle);
+        background: var(--bg-header);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 18px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 38% 62%;
+        min-height: calc(100vh - 64px);
+      }
+      .call-pane {
+        border-right: 1px solid var(--border-subtle);
+        padding: 18px;
+      }
+      .live {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid var(--accent-red);
+        color: #fecaca;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+      #wave {
+        width: 100%;
+        height: 92px;
+        margin-top: 18px;
+        border-radius: 10px;
+        background: #0b1222;
+        border: 1px solid var(--border-subtle);
+      }
+      .end-btn {
+        margin-top: 24px;
+        border: 0;
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--accent-red);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .dash {
+        display: grid;
+        grid-template-columns: 38% 62%;
+        gap: 10px;
+        padding: 10px;
+      }
+      .left-col, .right-col {
+        display: grid;
+        gap: 10px;
+      }
+      .left-col { grid-template-rows: 40% 60%; }
+      .right-col { grid-template-rows: 55% 25% 20%; }
+      .panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 10px;
+        overflow: hidden;
+      }
+      .panel h3 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--text-secondary);
+      }
+      .scroll { overflow: auto; height: calc(100% - 24px); }
+      .bubble { border-radius: 8px; padding: 8px; margin: 8px 0; font-size: 13px; }
+      .customer { border-left: 3px solid #4b5563; background: var(--bg-elevated); }
+      .jordan { border-left: 3px solid var(--accent-blue); background: rgba(37, 99, 235, 0.14); }
+      .thinking { border: 1px dashed rgba(168, 85, 247, 0.5); background: rgba(168, 85, 247, 0.08); font-style: italic; }
+      .stage-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; font-size: 13px; }
+      .dot { width: 10px; height: 10px; border-radius: 999px; border: 1px solid #374151; }
+      .dot.active { background: var(--accent-blue); border-color: var(--accent-blue); }
+      .dot.done { background: var(--accent-green); border-color: var(--accent-green); }
+      .profile-row { display: flex; justify-content: space-between; gap: 8px; margin: 6px 0; font-size: 13px; }
+      .progress {
+        margin-bottom: 8px;
+        border-radius: 999px;
+        height: 8px;
+        background: #0b1222;
+      }
+      .progress > div {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: var(--accent-blue);
+        transition: width 250ms ease;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="landingView" class="view">
+      <div class="landing">
+        <h1 class="hero">Stop spending 4 hours on comp reports.</h1>
+        <p class="sub">
+          Jordan, Apex's AI sales agent, will show you how to automate your
+          comp workflow in 5 minutes.
+        </p>
+        <div class="cards">
+          <article class="card"><strong>Comp Analysis</strong><p>From CoStar pull to client-ready report in under a minute.</p></article>
+          <article class="card"><strong>Client Portal</strong><p>Give clients live updates without manual status emails.</p></article>
+          <article class="card"><strong>Pipeline Intelligence</strong><p>Spot at-risk deals before they stall.</p></article>
+        </div>
+        <button id="talkBtn" class="cta">📞 Talk to Jordan — Free Demo</button>
+      </div>
+    </section>
+
+    <section id="connectingView" class="view connecting hidden">
+      <div class="connect-card">
+        <div class="avatar">J</div>
+        <div style="font-size:20px;font-weight:700;">Jordan</div>
+        <div style="color:var(--text-secondary); margin-bottom:14px;">Senior Sales Executive, Apex</div>
+        <div id="connectingText">Connecting to Jordan...</div>
+      </div>
+    </section>
+
+    <section id="activeView" class="view hidden">
+      <header class="app-header">
+        <strong>Apex Live Call</strong>
+        <span class="live">🔴 LIVE <span id="timer">00:00</span></span>
+      </header>
+      <div class="split">
+        <aside class="call-pane">
+          <div class="avatar" style="animation:none; box-shadow:none;">J</div>
+          <div style="font-size:24px;font-weight:700;">Jordan</div>
+          <div style="color:var(--text-secondary)">Listening...</div>
+          <canvas id="wave"></canvas>
+          <button id="endBtn" class="end-btn">End Call</button>
+        </aside>
+        <main class="dash">
+          <section class="left-col">
+            <article class="panel">
+              <h3>SALES STAGE</h3>
+              <div id="stageList" class="scroll"></div>
+            </article>
+            <article class="panel">
+              <h3>CUSTOMER PROFILE</h3>
+              <div class="progress"><div id="profileProgress"></div></div>
+              <div id="profileList" class="scroll"></div>
+            </article>
+          </section>
+          <section class="right-col">
+            <article class="panel">
+              <h3>LIVE CONVERSATION + THINKING</h3>
+              <div id="conversationList" class="scroll"></div>
+            </article>
+            <article class="panel">
+              <h3>WEB RESEARCH VISUALIZER</h3>
+              <div id="researchList" class="scroll"></div>
+            </article>
+            <article class="panel">
+              <h3>AGENT STRATEGY</h3>
+              <div id="strategyText"></div>
+            </article>
+          </section>
+        </main>
+      </div>
+    </section>
+
+    <script>
+      const landingView = document.getElementById("landingView");
+      const connectingView = document.getElementById("connectingView");
+      const activeView = document.getElementById("activeView");
+      const talkBtn = document.getElementById("talkBtn");
+      const endBtn = document.getElementById("endBtn");
+      const timerNode = document.getElementById("timer");
+      let callStartedAt = null;
+      let pollHandle = null;
+      let timerHandle = null;
+
+      const STAGES = ["GREETING", "DISCOVERY", "PITCH", "OBJECTION_HANDLING", "CLOSING", "FOLLOW_UP"];
+      const PROFILE_KEYS = [
+        "company_name", "team_size", "industry_focus", "current_tools",
+        "pain_points", "budget_sensitivity", "decision_timeline", "other_stakeholders"
+      ];
+
+      function show(view) {
+        landingView.classList.add("hidden");
+        connectingView.classList.add("hidden");
+        activeView.classList.add("hidden");
+        view.classList.remove("hidden");
+      }
+
+      async function post(url, body) {
+        await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) });
+      }
+
+      async function fetchState() {
+        const res = await fetch("/state");
+        return await res.json();
+      }
+
+      function renderState(state) {
+        const stageList = document.getElementById("stageList");
+        stageList.innerHTML = "";
+        const activeIndex = STAGES.indexOf(state.stage || "GREETING");
+        STAGES.forEach((name, idx) => {
+          const row = document.createElement("div");
+          row.className = "stage-row";
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          if (idx < activeIndex) dot.classList.add("done");
+          else if (idx === activeIndex) dot.classList.add("active");
+          row.appendChild(dot);
+          const label = document.createElement("span");
+          label.textContent = name.replace("_", " ");
+          row.appendChild(label);
+          stageList.appendChild(row);
+        });
+
+        const profileList = document.getElementById("profileList");
+        profileList.innerHTML = "";
+        let filled = 0;
+        PROFILE_KEYS.forEach((key) => {
+          const val = (state.profile || {})[key];
+          if (val) filled += 1;
+          const row = document.createElement("div");
+          row.className = "profile-row";
+          row.innerHTML = `<span>${key.replace("_", " ").toUpperCase()}</span><span>${val || "—"}</span>`;
+          profileList.appendChild(row);
+        });
+        document.getElementById("profileProgress").style.width = `${(filled / PROFILE_KEYS.length) * 100}%`;
+
+        const convo = document.getElementById("conversationList");
+        convo.innerHTML = "";
+        (state.conversation || []).forEach((entry) => {
+          const node = document.createElement("div");
+          node.className = `bubble ${entry.type}`;
+          node.textContent = `[${entry.timestamp}] ${entry.text}`;
+          convo.appendChild(node);
+        });
+        convo.scrollTop = convo.scrollHeight;
+
+        const research = document.getElementById("researchList");
+        research.innerHTML = "";
+        if (!state.research_active && !(state.research_progress || []).length) {
+          research.textContent = "Web research standby...";
+        } else {
+          const query = document.createElement("div");
+          query.textContent = state.research_query ? `Searching: ${state.research_query}` : "Research active";
+          research.appendChild(query);
+          (state.research_progress || []).forEach((line) => {
+            const row = document.createElement("div");
+            row.style.marginTop = "6px";
+            row.textContent = line;
+            research.appendChild(row);
+          });
+        }
+
+        document.getElementById("strategyText").textContent = state.strategy || "";
+      }
+
+      function drawWave() {
+        const c = document.getElementById("wave");
+        const ctx = c.getContext("2d");
+        c.width = c.clientWidth;
+        c.height = c.clientHeight;
+        let t = 0;
+        setInterval(() => {
+          t += 0.08;
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.strokeStyle = "#2563eb";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let x = 0; x < c.width; x++) {
+            const y = c.height / 2 + Math.sin(x * 0.05 + t) * 10 + Math.sin(x * 0.01 + t * 1.4) * 5;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }, 33);
+      }
+
+      function startTimer() {
+        clearInterval(timerHandle);
+        timerHandle = setInterval(() => {
+          if (!callStartedAt) return;
+          const elapsed = Math.max(0, Math.floor((Date.now() - callStartedAt) / 1000));
+          const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+          const ss = String(elapsed % 60).padStart(2, "0");
+          timerNode.textContent = `${mm}:${ss}`;
+        }, 500);
+      }
+
+      async function startCall() {
+        show(connectingView);
+        await post("/start_call", {});
+        setTimeout(() => {
+          callStartedAt = Date.now();
+          startTimer();
+          show(activeView);
+          drawWave();
+          pollHandle = setInterval(async () => renderState(await fetchState()), 800);
+        }, 2000);
+      }
+
+      async function endCall() {
+        await post("/end_call", {});
+        clearInterval(pollHandle);
+        clearInterval(timerHandle);
+        show(landingView);
+      }
+
+      talkBtn.addEventListener("click", startCall);
+      endBtn.addEventListener("click", endCall);
+    </script>
+  </body>
+</html>

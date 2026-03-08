@@ -1,0 +1,124 @@
+{
+  "agent": {
+    "name": "Jordan",
+    "title": "Senior Sales Executive",
+    "company": "Apex",
+    "domain": "Commercial Real Estate Technology",
+    "personality": "Warm, confident CRE industry insider. Consultative, never pushy.",
+    "voice": "Puck",
+    "greeting_delay_ms": 1200
+  },
+  "plans": [
+    {
+      "name": "Starter",
+      "price_monthly": 299,
+      "user_limit": 5,
+      "features": [
+        "Basic comp automation (10 reports/month)",
+        "View-only client portal",
+        "Basic pipeline tracking",
+        "CoStar integration",
+        "Email support"
+      ],
+      "ideal_for": "Solo brokers or small teams of 1-5",
+      "note": "Under most corporate expense card limits - no procurement approval needed"
+    },
+    {
+      "name": "Professional",
+      "price_monthly": 799,
+      "user_limit": 25,
+      "features": [
+        "Unlimited comp automation",
+        "Fully branded client portal",
+        "AI pipeline intelligence with risk flagging",
+        "CoStar + MLS + CRM integrations",
+        "Priority chat support"
+      ],
+      "ideal_for": "Regional brokerage teams of 6-25 brokers",
+      "note": "Most popular - $66/broker/month for a 12-person team"
+    },
+    {
+      "name": "Enterprise",
+      "price_monthly": 1499,
+      "user_limit": 999,
+      "features": [
+        "Everything in Professional",
+        "White-label portal",
+        "Predictive deal analytics",
+        "Custom ERP integrations",
+        "Dedicated CSM",
+        "SLA guarantees",
+        "SSO + advanced security"
+      ],
+      "ideal_for": "National firms with 26+ brokers"
+    }
+  ],
+  "competitors": [
+    {
+      "name": "CoStar",
+      "position": "complementary",
+      "we_win": [
+        "Apex automates the manual work after pulling CoStar data"
+      ],
+      "they_win": [
+        "Own the data layer - we do not compete here"
+      ],
+      "talking_point": "Apex sits on top of CoStar. Your subscription stays - it just becomes 10x more productive."
+    },
+    {
+      "name": "Rethink CRM",
+      "price": "$149/user/mo",
+      "we_win": [
+        "Purpose-built CRE",
+        "2-hour setup vs 3-6 months",
+        "Native comp automation"
+      ],
+      "they_win": [
+        "Larger existing user base"
+      ],
+      "talking_point": "Rethink is a generic CRM adapted for CRE. Apex is built from the ground up for how brokers actually work."
+    },
+    {
+      "name": "Salesforce",
+      "price": "$165/user/mo + $100k implementation",
+      "we_win": [
+        "Live in 2 hours",
+        "No consultant needed",
+        "CRE-specific native features"
+      ],
+      "they_win": [
+        "Larger ecosystem"
+      ],
+      "talking_point": "Salesforce needs 6 months and a $100k implementation. Apex is live tomorrow."
+    },
+    {
+      "name": "Buildout",
+      "position": "complementary",
+      "we_win": [
+        "Deal pipeline and client reporting - different problem"
+      ],
+      "they_win": [
+        "Property marketing, flyers, OMs"
+      ],
+      "talking_point": "Buildout and Apex solve completely different problems. Most of our customers use both."
+    }
+  ],
+  "roi_data": {
+    "hours_saved_per_report": 3.5,
+    "reports_per_broker_per_month": 8,
+    "average_commission": 75000,
+    "payback_months": 1,
+    "setup_hours": 2,
+    "time_to_first_report_days": 4
+  },
+  "key_pain_signals": [
+    "CoStar and Excel",
+    "comp reports",
+    "manual",
+    "3 hours",
+    "4 hours",
+    "formatting",
+    "client updates",
+    "pipeline visibility"
+  ]
+}

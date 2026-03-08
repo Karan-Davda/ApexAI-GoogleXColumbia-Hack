@@ -1,0 +1,153 @@
+# [PRODUCT_NAME] — Cursor Rules
+# Real-Time CRE AI Sales Agent | Columbia University AI Hackathon 2026
+# Agent: Jordan | Stack: Gemini Live API + Google ADK
+
+## PROJECT OVERVIEW
+This is a real-time voice AI sales agent for the Commercial Real Estate (CRE)
+technology market. Jordan — our AI agent — conducts live voice conversations
+with CRE brokers, handles objections, calls tools mid-conversation, and closes
+deals. Everything runs in Python. No databases, no RAG, no external speech
+services.
+
+## CRITICAL RULES — NEVER VIOLATE THESE
+
+### Audio
+- INPUT_RATE  = 16000   # microphone — Gemini expected input
+- OUTPUT_RATE = 24000   # speaker — Gemini outputs 24kHz, NOT 16kHz
+- OUTPUT_CHUNK = 1024   # max buffer size for clean interruption cutoff
+- Never change OUTPUT_RATE to 16000. Audio will be slow and distorted.
+- On interruption signal: call output_stream.stop_stream() immediately, drain buffer
+
+### Config
+- ALL product data (plans, pricing, competitors, ROI) lives in config.json ONLY
+- tools.py must read from CONFIG = json.load(open('config.json')) at module level
+- Never hardcode plan names, prices, or competitor data in Python files
+- Never hardcode the product name — always read from config['agent']['company']
+- Product name placeholder is [PRODUCT_NAME] — will be replaced via config.json
+
+### Prompt
+- Never edit prompts/system_prompt.txt manually — it is auto-generated
+- Always re-run generate_prompt.py after any config.json change
+- Prompt must use contractions throughout (I'm, it's, you'll, that's)
+- Prompt must never contain markdown symbols (* # -) — Gemini reads them aloud
+
+### Tools
+- Every ADK tool function must have a docstring — ADK uses it to decide when to call
+- Every tool write to dashboard_state must use _lock from state.py
+- Every tool call must append to dashboard_state['tools_called']
+
+### Architecture
+- agent.py and vision.py run locally ONLY — they need mic/speaker
+- server.py + dashboard.html deploy to Google Cloud Run
+- Dockerfile must NOT include agent.py or vision.py
+
+## FILE RESPONSIBILITIES
+
+agent.py
+  - Entry point only
+  - Startup sequence: generate_prompt() → start server thread → connect Gemini → start audio threads → start vision thread
+  - Audio loop: base on Google SDK reference example, do not invent
+  - Print on ready: "Jordan from [config agent company] is ready. Start speaking."
+
+config.json
+  - Single source of truth for all domain data
+  - Structure: agent{}, plans[], competitors[], roi_data{}
+  - Changing this file + rerunning generate_prompt.py = full domain swap
+
+generate_prompt.py
+  - Reads config.json
+  - Writes prompts/system_prompt.txt
+  - Must log approximate token count to console
+  - Run automatically at agent.py startup
+
+tools.py
+  - 6 functions: get_product_info, calculate_price, compare_competitor,
+    generate_recommendation, update_customer_profile, update_sales_stage
+  - All read from CONFIG (loaded at module level)
+  - All write to state via state._lock
+
+state.py
+  - Single shared dict: dashboard_state
+  - Keys: stage, stage_history, profile, tools_called, strategy
+  - All mutations use threading.Lock
+
+server.py
+  - FastAPI on port 8080
+  - GET /         → serve dashboard.html
+  - GET /state    → return dashboard_state as JSON
+  - POST /update_state → update in-memory state
+  - GET /health   → {status: ok, timestamp: unix_time}
+  - CORS: allow all origins
+
+vision.py
+  - cv2.VideoCapture(0)
+  - 1 frame per 1.5 seconds
+  - JPEG quality 70
+  - Entire function wrapped in try/except — fail silently
+  - Daemon thread always
+
+dashboard.html
+  - Single file — no external CSS/JS files
+  - Dark theme: #0F172A bg, #E2E8F0 text, #3B82F6 accent
+  - 2x2 CSS grid, min 18px font everywhere
+  - Poll GET /state every 1000ms
+  - Stage badge colors: DISCOVERY=#3B82F6, PITCH=#22C55E, OBJECTION_HANDLING=#F97316, CLOSING=#A855F7
+  - Yellow flash (#FEF08A) on new profile entries
+
+## CRE DOMAIN CONTEXT
+
+The pain: CRE brokers manually pull comparable sales from CoStar → paste into Excel
+→ format report → email to client. This takes 2-4 hours per report.
+[PRODUCT_NAME] automates this in under 60 seconds.
+
+Jordan's opening question: "Are you more focused on the transaction side or asset management?"
+This single question segments the prospect and establishes CRE credibility.
+
+Key signals Jordan listens for:
+- "CoStar and Excel" → core pain confirmed → skip to PITCH on comp automation
+- "CoStar" as competitor → not a competitor, complementary: "[PRODUCT_NAME] sits on top of CoStar"
+- Team size mentioned → call update_customer_profile immediately
+- Shows something on webcam → react to it before anything else
+
+## ADK TOOL BEHAVIOR
+
+Tools are conversation pivots, not just data lookups. Each call changes
+what Jordan does next.
+
+generate_recommendation logic:
+  team <= 3  → Starter ($299/mo)
+  team <= 15 → Professional ($799/mo)
+  team > 15  → Enterprise ($1,999/mo)
+  Adjust: if 'comp_analysis' or 'reporting' in pain_points → push toward Professional minimum
+
+compare_competitor for CoStar:
+  NEVER position as competitive. Always: "We sit on top of CoStar, your
+  subscription stays, it becomes 10x more productive."
+
+## SALES STAGE RULES
+
+Stage transitions are INTENT-driven, not timer-driven.
+
+GREETING → DISCOVERY: when customer answers the opening CRE question
+DISCOVERY → PITCH: only when Jordan knows team_size + current_workflow + primary_pain
+PITCH → OBJECTION_HANDLING: when customer signals an objection
+OBJECTION_HANDLING → PITCH or CLOSING: only when objection is fully resolved
+CLOSING: when customer asks for recommendation or signals purchase intent
+
+## VOICE QUALITY NON-NEGOTIABLES
+- Voice: Aoede (primary) or Puck — set in PrebuiltVoiceConfig
+- Contractions always: "I'm" not "I am", "it's" not "it is"
+- Max 2 clauses per sentence
+- No bullet reading — lists must be converted to natural speech
+- Forbidden words: firstly, secondly, in conclusion, leverage, synergy, circle back
+- CRE vocabulary used naturally: comps, NOI, cap rate, pipeline, close rate
+- Filler transitions: "so", "here's the thing", "actually", "right"
+
+## GCP DEPLOYMENT
+- Project: voiceagent-hackathon
+- Region: us-central1
+- Cloud Run service: voiceagent-dashboard
+- Image: us-central1-docker.pkg.dev/voiceagent-hackathon/voiceagent/server:latest
+- API key: stored in Secret Manager as GEMINI_API_KEY, never in code
+- DASHBOARD_URL env var: set to Cloud Run URL when running agent.py locally
+- agent.py pushes state updates to DASHBOARD_URL (default: localhost:8080)

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ApexAI Live Dashboard</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 26px;
+        margin: 0 0 16px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 14px;
+        background: #1d4ed8;
+      }
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      li {
+        margin: 6px 0;
+      }
+      pre {
+        white-space: pre-wrap;
+        font-size: 14px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>ApexAI Sales Agent Dashboard</h1>
+      <div class="grid">
+        <section class="card">
+          <h2>Current Stage</h2>
+          <span id="stage" class="badge">GREETING</span>
+          <h2 style="margin-top: 16px">Strategy</h2>
+          <pre id="strategy">Waiting for conversation start</pre>
+        </section>
+        <section class="card">
+          <h2>Customer Profile</h2>
+          <div id="profile"></div>
+        </section>
+        <section class="card">
+          <h2>Recent Tool Calls</h2>
+          <ul id="tools"></ul>
+        </section>
+        <section class="card">
+          <h2>Stage History</h2>
+          <ul id="history"></ul>
+        </section>
+      </div>
+    </div>
+    <script>
+      async function refresh() {
+        const res = await fetch("/state");
+        const data = await res.json();
+
+        document.getElementById("stage").textContent = data.stage || "GREETING";
+        document.getElementById("strategy").textContent = data.strategy || "";
+
+        const profile = document.getElementById("profile");
+        profile.innerHTML = "";
+        const entries = Object.entries(data.profile || {});
+        if (!entries.length) {
+          profile.textContent = "No profile data yet";
+        } else {
+          for (const [k, v] of entries) {
+            const row = document.createElement("div");
+            row.className = "row";
+            row.innerHTML = `<strong>${k}</strong><span>${v}</span>`;
+            profile.appendChild(row);
+          }
+        }
+
+        const tools = document.getElementById("tools");
+        tools.innerHTML = "";
+        for (const t of data.tools_called || []) {
+          const li = document.createElement("li");
+          li.textContent = `[${t.timestamp}] ${t.tool} ${t.input} -> ${t.result}`;
+          tools.appendChild(li);
+        }
+
+        const history = document.getElementById("history");
+        history.innerHTML = "";
+        for (const h of data.stage_history || []) {
+          const li = document.createElement("li");
+          li.textContent = `${h.stage}: ${h.reason}`;
+          history.appendChild(li);
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 1000);
+    </script>
+  </body>
+</html>
